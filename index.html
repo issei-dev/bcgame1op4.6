@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Brave Chronicle - ブレイブクロニクル</title>
+<style>
+/* ============================================
+   BASE RESET & FONT
+   ============================================ */
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  background:#000;color:#fff;
+  font-family:'Courier New','MS Gothic',monospace;
+  user-select:none;-webkit-user-select:none;
+  touch-action:manipulation;
+}
+
+/* ============================================
+   GAME CONTAINER
+   ============================================ */
+#game{
+  width:100%;max-width:480px;height:100vh;max-height:800px;
+  margin:0 auto;display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+}
+
+/* ============================================
+   DQ-STYLE WINDOW
+   ============================================ */
+.dq-window{
+  background:linear-gradient(135deg,#0a0a3e,#1a1a6e);
+  border:3px solid #fff;
+  border-radius:8px;
+  box-shadow:inset 0 0 0 2px #0a0a3e,inset 0 0 0 4px #6666cc,0 4px 12px rgba(0,0,0,.8);
+  color:#fff;padding:12px 16px;line-height:1.7;letter-spacing:1px;
+  font-size:15px;
+}
+
+/* ============================================
+   TITLE SCREEN
+   ============================================ */
+#title-screen{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;text-align:center;
+}
+#title-screen h1{font-size:22px;margin-bottom:8px;color:#ffcc00;text-shadow:0 0 10px #ff8800;}
+#title-screen .subtitle{font-size:13px;color:#aaa;margin-bottom:30px;}
+#title-screen .menu-item{
+  font-size:17px;padding:10px 30px;margin:6px;cursor:pointer;
+  transition:all .15s;
+}
+#title-screen .menu-item:hover,#title-screen .menu-item.selected{
+  color:#ffcc00;text-shadow:0 0 8px #ff8800;
+}
+.blink{animation:blink .8s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+/* ============================================
+   NAME INPUT
+   ============================================ */
+#name-screen{
+  display:none;flex-direction:column;align-items:center;justify-content:center;height:100%;
+}
+#name-screen input{
+  background:#111;border:2px solid #6666cc;color:#fff;
+  font-size:18px;padding:8px 16px;text-align:center;border-radius:4px;
+  font-family:inherit;width:200px;margin:16px 0;
+}
+#name-screen button{
+  background:#1a1a6e;color:#fff;border:2px solid #fff;border-radius:6px;
+  padding:8px 32px;font-size:16px;cursor:pointer;font-family:inherit;
+}
+
+/* ============================================
+   FIELD SCREEN
+   ============================================ */
+#field-screen{display:none;flex-direction:column;height:100%;}
+#field-info{padding:6px 10px;font-size:13px;color:#aaa;text-align:center;}
+#map-container{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+#map{
+  font-size:20px;line-height:1.15;letter-spacing:2px;
+  white-space:pre;text-align:center;
+}
+#field-status{padding:8px 12px;font-size:13px;}
+#field-status .hp-bar,#field-status .mp-bar{height:8px;border-radius:4px;margin-top:2px;}
+#field-status .hp-bar{background:#44ff44;}
+#field-status .mp-bar{background:#4488ff;}
+.bar-bg{background:#333;border-radius:4px;height:8px;width:120px;display:inline-block;vertical-align:middle;}
+
+/* ============================================
+   MESSAGE WINDOW (FIELD)
+   ============================================ */
+#field-msg{
+  display:none;position:absolute;bottom:80px;left:8px;right:8px;
+  min-height:60px;z-index:10;font-size:14px;
+}
+
+/* ============================================
+   BATTLE SCREEN
+   ============================================ */
+#battle-screen{display:none;flex-direction:column;height:100%;}
+#battle-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#battle-monster-display{font-size:48px;margin:10px 0;}
+#battle-monster-name{font-size:15px;color:#ffcc00;margin-bottom:8px;}
+#battle-log{
+  width:calc(100% - 16px);margin:8px;min-height:80px;font-size:13px;
+  max-height:120px;overflow-y:auto;
+}
+#battle-status{padding:6px 12px;font-size:13px;}
+#battle-commands{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:8px;
+}
+#battle-commands .cmd{
+  padding:12px;text-align:center;cursor:pointer;font-size:15px;
+  transition:all .15s;border-radius:6px;
+}
+#battle-commands .cmd:hover,#battle-commands .cmd.selected{
+  color:#ffcc00;text-shadow:0 0 8px #ff8800;
+  background:rgba(255,204,0,.1);
+}
+
+/* ============================================
+   SPELL / ITEM SELECT (BATTLE)
+   ============================================ */
+#battle-submenu{
+  display:none;position:absolute;bottom:60px;left:8px;right:8px;
+  z-index:20;max-height:200px;overflow-y:auto;
+}
+#battle-submenu .sub-item{
+  padding:8px 12px;cursor:pointer;font-size:14px;
+  border-bottom:1px solid #333;
+}
+#battle-submenu .sub-item:hover{color:#ffcc00;background:rgba(255,204,0,.1);}
+
+/* ============================================
+   TOWN SCREEN
+   ============================================ */
+#town-screen{display:none;flex-direction:column;height:100%;}
+#town-title{text-align:center;padding:12px;font-size:18px;color:#ffcc00;}
+#town-options{padding:8px;flex:1;}
+#town-options .town-btn{
+  display:block;width:100%;padding:14px;margin:6px 0;
+  text-align:center;cursor:pointer;font-size:15px;border-radius:6px;
+}
+#town-options .town-btn:hover{color:#ffcc00;background:rgba(255,204,0,.1);}
+#town-msg{margin:8px;min-height:60px;font-size:14px;}
+
+/* ============================================
+   SHOP SCREEN
+   ============================================ */
+#shop-screen{display:none;flex-direction:column;height:100%;}
+#shop-list{flex:1;overflow-y:auto;padding:8px;}
+#shop-list .shop-item{
+  display:flex;justify-content:space-between;padding:10px 12px;
+  cursor:pointer;border-bottom:1px solid #333;font-size:14px;
+}
+#shop-list .shop-item:hover{color:#ffcc00;background:rgba(255,204,0,.1);}
+
+/* ============================================
+   MENU SCREEN
+   ============================================ */
+#menu-screen{
+  display:none;position:absolute;top:0;left:0;right:0;bottom:0;
+  z-index:30;background:rgba(0,0,0,.85);
+  flex-direction:column;padding:16px;overflow-y:auto;
+}
+#menu-screen .menu-btn{
+  display:block;width:100%;padding:14px;margin:6px 0;
+  text-align:center;cursor:pointer;font-size:16px;border-radius:6px;
+}
+#menu-screen .menu-btn:hover{color:#ffcc00;background:rgba(255,204,0,.1);}
+#menu-detail{margin-top:8px;font-size:13px;line-height:1.8;}
+
+/* ============================================
+   MOBILE CONTROLS
+   ============================================ */
+#mobile-controls{
+  display:none;padding:6px 12px 12px;
+}
+#dpad{
+  display:grid;
+  grid-template-areas:'_ u _' 'l c r' '_ d _';
+  grid-template-columns:50px 50px 50px;
+  grid-template-rows:50px 50px 50px;
+  gap:3px;float:left;
+}
+#dpad .d-btn{
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;border-radius:8px;cursor:pointer;
+  background:rgba(255,255,255,.1);
+}
+#dpad .d-btn:active{background:rgba(255,204,0,.3);}
+.d-up{grid-area:u;}.d-down{grid-area:d;}.d-left{grid-area:l;}.d-right{grid-area:r;}.d-center{grid-area:c;}
+#action-buttons{float:right;display:flex;gap:8px;margin-top:30px;}
+#action-buttons .a-btn{
+  width:56px;height:56px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;font-weight:bold;
+  background:rgba(255,255,255,.12);
+}
+#action-buttons .a-btn:active{background:rgba(255,204,0,.3);}
+.clearfix::after{content:'';display:table;clear:both;}
+
+/* ============================================
+   ANIMATION UTILITIES
+   ============================================ */
+.shake{animation:shake .3s ease;}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+.flash{animation:flash .4s ease;}
+@keyframes flash{0%{background:transparent;}50%{background:rgba(255,255,0,.5);}100%{background:transparent;}}
+.fade-in{animation:fadeIn .5s ease;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media(max-width:600px){
+  #mobile-controls{display:block;}
+  #map{font-size:17px;}
+}
+@media(min-width:601px){
+  #game{border-left:2px solid #333;border-right:2px solid #333;}
+}
+</style>
+</head>
+<body>
+
+<div id="game">
+
+  <!-- ===== TITLE ===== -->
+  <div id="title-screen">
+    <div style="font-size:48px;margin-bottom:12px;">🐉</div>
+    <h1>Brave Chronicle</h1>
+    <div class="subtitle">─── ブレイブクロニクル ───</div>
+    <div style="margin-top:10px;font-size:12px;color:#666;">~ 失われし光の物語 ~</div>
+    <div style="margin-top:40px;">
+      <div class="dq-window menu-item" data-action="newgame" tabindex="0">🗡️ 新しい冒険</div>
+      <div class="dq-window menu-item" data-action="continue" tabindex="0">💾 冒険の続き</div>
+    </div>
+    <div style="margin-top:40px;font-size:12px;color:#555;" class="blink">― Press Enter or Tap ―</div>
+  </div>
+
+  <!-- ===== NAME INPUT ===== -->
+  <div id="name-screen">
+    <div class="dq-window" style="text-align:center;padding:24px;">
+      <div style="margin-bottom:12px;">🧝 勇者の名前を入力してください</div>
+      <input type="text" id="hero-name-input" maxlength="8" placeholder="アレス" value="アレス">
+      <br>
+      <button id="name-confirm">冒険に出る</button>
+    </div>
+  </div>
+
+  <!-- ===== FIELD ===== -->
+  <div id="field-screen">
+    <div id="field-info" class="dq-window"></div>
+    <div id="map-container"><div id="map"></div></div>
+    <div id="field-status" class="dq-window"></div>
+    <div id="field-msg" class="dq-window"></div>
+    <div id="mobile-controls" class="clearfix">
+      <div id="dpad">
+        <div class="d-btn d-up" data-dir="up">⬆️</div>
+        <div class="d-btn d-left" data-dir="left">⬅️</div>
+        <div class="d-btn d-center" data-dir="action">🔘</div>
+        <div class="d-btn d-right" data-dir="right">➡️</div>
+        <div class="d-btn d-down" data-dir="down">⬇️</div>
+      </div>
+      <div id="action-buttons">
+        <div class="a-btn dq-window" data-act="menu">📋</div>
+        <div class="a-btn dq-window" data-act="action">🅰️</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BATTLE ===== -->
+  <div id="battle-screen">
+    <div id="battle-area" class="dq-window" style="margin:8px;flex:1;">
+      <div id="battle-monster-display"></div>
+      <div id="battle-monster-name"></div>
+      <div id="battle-monster-hp" style="font-size:12px;color:#aaa;"></div>
+    </div>
+    <div id="battle-log" class="dq-window"></div>
+    <div id="battle-status" class="dq-window" style="margin:0 8px;"></div>
+    <div id="battle-commands" style="padding:8px;">
+      <div class="cmd dq-window" data-cmd="attack">⚔️ たたかう</div>
+      <div class="cmd dq-window" data-cmd="spell">🔮 じゅもん</div>
+      <div class="cmd dq-window" data-cmd="item">🎒 どうぐ</div>
+      <div class="cmd dq-window" data-cmd="run">💨 にげる</div>
+    </div>
+    <div id="battle-submenu" class="dq-window"></div>
+  </div>
+
+  <!-- ===== TOWN ===== -->
+  <div id="town-screen">
+    <div id="town-title" class="dq-window"></div>
+    <div id="town-options" class="dq-window" style="margin:8px;"></div>
+    <div id="town-msg" class="dq-window" style="margin:0 8px 8px;min-height:80px;"></div>
+  </div>
+
+  <!-- ===== SHOP ===== -->
+  <div id="shop-screen">
+    <div id="shop-title" class="dq-window" style="margin:8px;text-align:center;font-size:14px;"></div>
+    <div id="shop-list" class="dq-window" style="margin:0 8px;flex:1;"></div>
+    <div id="shop-gold" class="dq-window" style="margin:8px;font-size:14px;text-align:center;"></div>
+    <div style="padding:8px;text-align:center;">
+      <span class="dq-window" style="padding:10px 24px;cursor:pointer;font-size:15px;" id="shop-back">もどる</span>
+    </div>
+  </div>
+
+  <!-- ===== MENU OVERLAY ===== -->
+  <div id="menu-screen">
+    <div class="dq-window" style="text-align:center;font-size:16px;margin-bottom:8px;">📋 メニュー</div>
+    <div class="menu-btn dq-window" data-menu="status">📊 ステータス</div>
+    <div class="menu-btn dq-window" data-menu="equipment">⚔️ そうび</div>
+    <div class="menu-btn dq-window" data-menu="items">🎒 どうぐ</div>
+    <div class="menu-btn dq-window" data-menu="monster-book">📖 モンスター図鑑</div>
+    <div class="menu-btn dq-window" data-menu="achievements">🏆 じっせき</div>
+    <div class="menu-btn dq-window" data-menu="save">💾 セーブ</div>
+    <div class="menu-btn dq-window" data-menu="close">❌ とじる</div>
+    <div id="menu-detail" class="dq-window" style="margin-top:8px;display:none;"></div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+//  BRAVE CHRONICLE - COMPLETE GAME ENGINE
+// ============================================================
+
+// ========================
+//  GAME STATE
+// ========================
+const G = {
+  scene: 'title',   // title, name, field, battle, town, shop
+  hero: null,
+  currentMap: 'world',
+  battleState: null,
+  msgCallback: null,
+  menuOpen: false,
+  townId: null,
+  encounterSteps: 0,
+  storyFlags: {},
+  monsterBook: {},
+  achievements: [],
+  playTime: 0,
+  playTimer: null,
+};
+
+// ========================
+//  DATA: SPELLS
+// ========================
+const SPELLS = {
+  hoimi:    { name:'ホイミ',     mp:3,  type:'heal',   power:30, desc:'HPを少し回復', learnLv:3 },
+  gira:     { name:'ギラ',       mp:4,  type:'attack', power:20, desc:'炎で攻撃',     learnLv:5 },
+  rariho:   { name:'ラリホー',   mp:3,  type:'status', power:0,  desc:'敵を眠らせる', learnLv:7 },
+  behoimi:  { name:'ベホイミ',   mp:8,  type:'heal',   power:80, desc:'HPを大きく回復', learnLv:14 },
+  begirma:  { name:'ベギラマ',   mp:8,  type:'attack', power:50, desc:'強い炎で攻撃', learnLv:18 },
+  behomazn: { name:'ベホマズン', mp:36, type:'heal',   power:999,desc:'HPを全回復',   learnLv:30 },
+  giragira: { name:'イオナズン', mp:18, type:'attack', power:120,desc:'大爆発',       learnLv:28 },
+};
+
+// ========================
+//  DATA: ITEMS
+// ========================
+const ITEMS = {
+  herb:        { name:'やくそう',       price:30,  type:'heal',   power:30,  desc:'HP+30' },
+  magic_water: { name:'まほうのせいすい', price:80,  type:'mp_heal',power:20,  desc:'MP+20' },
+  antidote:    { name:'どくけしそう',   price:20,  type:'cure',   power:0,   desc:'毒を治す' },
+  wing:        { name:'キメラのつばさ', price:50,  type:'escape', power:0,   desc:'町へ戻る' },
+  elixir:      { name:'せかいじゅのしずく',price:0, type:'full',   power:999, desc:'全回復' },
+};
+
+// ========================
+//  DATA: EQUIPMENT
+// ========================
+const WEAPONS = {
+  wood_sword:   { name:'ひのきのぼう',   price:30,   atk:5 },
+  copper_sword: { name:'どうのつるぎ',   price:180,  atk:15 },
+  iron_sword:   { name:'はがねのつるぎ', price:1500, atk:35 },
+  flame_sword:  { name:'ほのおのつるぎ', price:6500, atk:63 },
+  legend_sword: { name:'でんせつのけん', price:0,    atk:105 },
+};
+const ARMORS = {
+  cloth:        { name:'ぬののふく',     price:25,   def:4 },
+  leather:      { name:'かわのよろい',   price:150,  def:12 },
+  iron_armor:   { name:'はがねのよろい', price:1200, def:25 },
+  magic_armor:  { name:'まほうのよろい', price:5500, def:45 },
+  legend_armor: { name:'でんせつのよろい', price:0,  def:80 },
+};
+
+// ========================
+//  DATA: MONSTERS
+// ========================
+const MONSTERS = {
+  slime:        { name:'スライム',         emoji:'🟢', hp:8,   atk:5,   def:3,   agi:3,  exp:3,   gold:2,   drop:'herb',       dropRate:.1,  area:[1] },
+  blue_slime:   { name:'ブルースライム',   emoji:'🔵', hp:14,  atk:9,   def:5,   agi:4,  exp:6,   gold:5,   drop:'herb',       dropRate:.1,  area:[1] },
+  bat:          { name:'シャドウバット',   emoji:'🦇', hp:12,  atk:8,   def:3,   agi:8,  exp:5,   gold:4,   drop:null,         dropRate:0,   area:[1,2] },
+  wolf:         { name:'ダークウルフ',     emoji:'🐺', hp:22,  atk:14,  def:8,   agi:7,  exp:12,  gold:10,  drop:'herb',       dropRate:.08, area:[2] },
+  skeleton:     { name:'スケルトン',       emoji:'💀', hp:30,  atk:20,  def:12,  agi:6,  exp:20,  gold:18,  drop:'antidote',   dropRate:.1,  area:[2,3] },
+  ghost:        { name:'ゴースト',         emoji:'👻', hp:35,  atk:18,  def:15,  agi:10, exp:22,  gold:20,  drop:'magic_water',dropRate:.08, area:[3] },
+  golem:        { name:'ゴーレム',         emoji:'🗿', hp:60,  atk:35,  def:30,  agi:3,  exp:50,  gold:40,  drop:null,         dropRate:0,   area:[3,4] },
+  dragon_kid:   { name:'ドラゴンキッズ',   emoji:'🐲', hp:55,  atk:32,  def:20,  agi:12, exp:45,  gold:35,  drop:'magic_water',dropRate:.1,  area:[4] },
+  demon:        { name:'デーモン',         emoji:'👿', hp:80,  atk:45,  def:28,  agi:15, exp:80,  gold:60,  drop:'elixir',     dropRate:.03, area:[4,5] },
+  dark_knight:  { name:'あんこくきし',     emoji:'🖤', hp:100, atk:55,  def:35,  agi:18, exp:100, gold:80,  drop:null,         dropRate:0,   area:[5] },
+  // BOSSES
+  boss1:        { name:'おおガエル',       emoji:'🐸', hp:60,  atk:18,  def:10,  agi:5,  exp:50,  gold:100, drop:null, dropRate:0, isBoss:true },
+  boss2:        { name:'さばくのまじん',   emoji:'🧞', hp:150, atk:38,  def:22,  agi:10, exp:200, gold:300, drop:null, dropRate:0, isBoss:true },
+  boss3:        { name:'こおりのきょじん', emoji:'🥶', hp:250, atk:55,  def:35,  agi:12, exp:500, gold:500, drop:null, dropRate:0, isBoss:true },
+  boss4:        { name:'かいていりゅう',   emoji:'🐙', hp:400, atk:72,  def:45,  agi:16, exp:1000,gold:800, drop:null, dropRate:0, isBoss:true },
+  boss5:        { name:'まおうヴォイドス', emoji:'😈', hp:700, atk:100, def:60,  agi:20, exp:5000,gold:0,   drop:null, dropRate:0, isBoss:true },
+  true_boss:    { name:'真・ヴォイドス',   emoji:'🔥', hp:1500,atk:160, def:90,  agi:30, exp:9999,gold:0,   drop:'elixir', dropRate:1, isBoss:true },
+};
+
+// ========================
+//  DATA: MAPS
+// ========================
+const TILE_DEF = {
+  '.':'🟩', '~':'🟦', '^':'⛰️', 'T':'🌲', 's':'🟨', 'S':'⬜',
+  '#':'⬛', 'C':'🏰', 'V':'🏘️', 'H':'🏠', 'c':'⛪', 'D':'🕳️',
+  'W':'🗼', 'B':'📦', 'd':'🚪', 'r':'🟫', '=':'🪜',
+};
+
+const MAPS = {
+  world: {
+    name:'フィールド',
+    width:20, height:20,
+    area: 1,
+    data:[
+      '^^~~~~~~~~~~~~~~^^',
+      '^T..............T^^',
+      '^...TT...~~..TT..^',
+      '..T.C..........T..',
+      '..............V...',
+      '.TT...........TT..',
+      '....rrrr..........',
+      '.......r..........',
+      '.......r.....D....',
+      '..V....r..........',
+      '.......r..^^......',
+      '.......r.^^^.....T',
+      'sssssssrsssssssss.',
+      'sss..ssrsss..sss..',
+      'ssD..ssrssV..ssss.',
+      'sssssssrssssssssss',
+      'sssssssrsss^^sssss',
+      '^^^^^^.r..^^^.....',
+      '^^^^^^..SS.SSSSSS^',
+      '^^^^^^SSSSWSSSSSS^',
+    ],
+    encounters:['slime','blue_slime','bat'],
+    towns:{
+      '3,3':  { id:'start_castle', name:'🏰 はじまりの城' },
+      '16,4': { id:'field_village', name:'🏘️ 草原の村' },
+      '2,9':  { id:'forest_village', name:'🏘️ 森の村' },
+      '12,14':{ id:'desert_town', name:'🏘️ 砂漠の町' },
+    },
+    dungeons:{
+      '13,8': { id:'cave1', name:'🕳️ はじまりの洞窟' },
+      '2,13': { id:'desert_cave', name:'🕳️ 砂漠の洞窟' },
+    },
+    events:{
+      '19,19': { type:'tower', msg:'🗼 塔の入口だ。強い力を感じる…' },
+    },
+    playerStart:{ x:8, y:6 },
+    blocked:['^','~','#'],
+  },
+  cave1: {
+    name:'はじまりの洞窟',
+    width:15, height:12,
+    area: 2,
+    data:[
+      '###############',
+      '#rrr##rrrr##rr#',
+      '#r.r##r..r##.r#',
+      '#r..rrr..rrr.r#',
+      '#r...........r#',
+      '#rr...B...rrr##',
+      '##rr.....rr####',
+      '###rr...rr#####',
+      '####rr.rr######',
+      '#####rdr#######',
+      '#####r=r#######',
+      '###############',
+    ],
+    encounters:['bat','wolf','skeleton'],
+    events:{
+      '5,5': { type:'chest', item:'copper_sword', flag:'cave1_chest', msg:'📦 宝箱を開けた！\n🗡️ どうのつるぎ を手に入れた！' },
+    },
+    boss:{ x:7, y:8, monster:'boss1', flag:'boss1_defeated', msg:'🐸 おおガエルが行く手を阻む！' },
+    exitTo:{ map:'world', x:13, y:8 },
+    playerStart:{ x:7, y:10 },
+    blocked:['#'],
+  },
+};
+
+// ========================
+//  DATA: TOWNS
+// ========================
+const TOWNS = {
+  start_castle:{
+    name:'🏰 はじまりの城',
+    welcome:'👑「勇者よ！世界に光を取り戻すのじゃ！\n5つの光の欠片を集めてくれ！」',
+    inn:{ price:10, msg:'👑「ゆっくり休むがよい」' },
+    shop:{
+      greeting:'🧔「王城の売店です。何をお求めで？」',
+      items:['herb','antidote','wing'],
+      equipment:['wood_sword','cloth'],
+    },
+    npcs:[
+      '👤「北の洞窟に最初の光の欠片があるらしい」',
+      '👤「東に草原の村がある。旅の準備を整えよう」',
+      '👤「メニューは Mキー か 📋ボタンで開けるよ」',
+    ],
+    church: true,
+  },
+  field_village:{
+    name:'🏘️ 草原の村',
+    welcome:'🧔「ようこそ、草原の村へ！」',
+    inn:{ price:20, msg:'💤 ぐっすり眠った…' },
+    shop:{
+      greeting:'🧔「いらっしゃい！」',
+      items:['herb','magic_water','antidote','wing'],
+      equipment:['copper_sword','leather'],
+    },
+    npcs:[
+      '👤「南の砂漠には強いモンスターが出るぞ」',
+      '👤「教会でセーブできるよ」',
+    ],
+    church: true,
+  },
+  forest_village:{
+    name:'🏘️ 森の村',
+    welcome:'🧓「よくぞ来た。ここは森の隠れ里じゃ」',
+    inn:{ price:30, msg:'🌿 森の香りに癒された…' },
+    shop:{
+      greeting:'🧔「珍しい品もありますよ」',
+      items:['herb','magic_water','wing'],
+      equipment:['iron_sword','iron_armor'],
+    },
+    npcs:[
+      '👤「砂漠の奥に古代の洞窟があるらしい」',
+    ],
+    church: true,
+  },
+  desert_town:{
+    name:'🏘️ 砂漠の町',
+    welcome:'🧕「砂漠の町へようこそ。水は貴重だよ」',
+    inn:{ price:50, msg:'🏜️ オアシスで休んだ…' },
+    shop:{
+      greeting:'🧔「砂漠仕様の品揃えさ！」',
+      items:['herb','magic_water','antidote','wing'],
+      equipment:['iron_sword','iron_armor','flame_sword','magic_armor'],
+    },
+    npcs:[
+      '👤「南の雪山の向こうに塔が見える…」',
+      '👤「まおうの力が日増しに強くなっている」',
+    ],
+    church: true,
+  },
+};
+
+// ========================
+//  DATA: LEVEL TABLE
+// ========================
+const LV_TABLE = [];
+for(let i=0;i<=99;i++){
+  LV_TABLE[i] = {
+    exp: Math.floor(i * i * 8 + i * 10),
+    hp:  30 + i*8 + Math.floor(i*i*0.1),
+    mp:  10 + i*4 + Math.floor(i*i*0.05),
+    atk: 8  + i*3 + Math.floor(i*i*0.05),
+    def: 5  + i*2 + Math.floor(i*i*0.04),
+    agi: 6  + i*2 + Math.floor(i*i*0.03),
+  };
+}
+
+// ========================
+//  DATA: ACHIEVEMENTS
+// ========================
+const ACH_DEF = {
+  first_battle:  { name:'はじめの一歩',    desc:'最初の戦闘に勝利' },
+  lv10:          { name:'かけだし冒険者',  desc:'レベル10に到達' },
+  lv25:          { name:'熟練の戦士',      desc:'レベル25に到達' },
+  lv50:          { name:'伝説の勇者',      desc:'レベル50に到達' },
+  boss1:         { name:'洞窟の主',        desc:'おおガエルを倒した' },
+  rich:          { name:'億万長者',        desc:'ゴールドを99999貯める' },
+  book10:        { name:'図鑑コレクター',  desc:'モンスター図鑑10種登録' },
+};
+
+// ========================
+//  HERO FACTORY
+// ========================
+function createHero(name){
+  return {
+    name: name || 'アレス',
+    level: 1,
+    hp: 30, maxHp: 30,
+    mp: 10, maxMp: 10,
+    atk: 8, def: 5, agi: 6,
+    baseAtk:8, baseDef:5,
+    exp: 0, gold: 50,
+    weapon: 'wood_sword',
+    armor: 'cloth',
+    inventory: { herb:3, wing:1 },
+    spells: [],
+    x: 8, y: 6,
+    currentMap: 'world',
+    steps: 0,
+  };
+}
+
+// ========================
+//  UTILITY FUNCTIONS
+// ========================
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rand = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+const clamp = (v,min,max) => Math.max(min,Math.min(max,v));
+
+function showScreen(id){
+  ['title-screen','name-screen','field-screen','battle-screen','town-screen','shop-screen'].forEach(s=>{
+    $(s).style.display='none';
+  });
+  $(id).style.display='flex';
+}
+
+function getEquipAtk(){
+  if(!G.hero) return 0;
+  const w = WEAPONS[G.hero.weapon];
+  return w ? w.atk : 0;
+}
+function getEquipDef(){
+  if(!G.hero) return 0;
+  const a = ARMORS[G.hero.armor];
+  return a ? a.def : 0;
+}
+function totalAtk(){ return G.hero.atk + getEquipAtk(); }
+function totalDef(){ return G.hero.def + getEquipDef(); }
+
+function calcDamage(atk, def){
+  let dmg = Math.floor((atk*2 - def) * (0.85 + Math.random()*0.3));
+  return Math.max(1, dmg);
+}
+
+function hpBar(current, max, width=10){
+  const filled = Math.round((current/max)*width);
+  return '█'.repeat(filled) + '░'.repeat(width-filled);
+}
+
+// ========================
+//  ACHIEVEMENT SYSTEM
+// ========================
+function unlockAch(id){
+  if(G.achievements.includes(id)) return;
+  G.achievements.push(id);
+  const a = ACH_DEF[id];
+  if(a) showFieldMsg(`🏆 実績解除！「${a.name}」`);
+}
+
+// ========================
+//  SAVE / LOAD
+// ========================
+function saveGame(slot=1){
+  const data = {
+    version:'1.0.0', slot,
+    hero: G.hero,
+    storyFlags: G.storyFlags,
+    monsterBook: G.monsterBook,
+    achievements: G.achievements,
+    playTime: G.playTime,
+  };
+  localStorage.setItem('braveChronicle_save'+slot, JSON.stringify(data));
+}
+
+function loadGame(slot=1){
+  const raw = localStorage.getItem('braveChronicle_save'+slot);
+  if(!raw) return false;
+  try{
+    const data = JSON.parse(raw);
+    G.hero = data.hero;
+    G.storyFlags = data.storyFlags || {};
+    G.monsterBook = data.monsterBook || {};
+    G.achievements = data.achievements || [];
+    G.playTime = data.playTime || 0;
+    G.currentMap = G.hero.currentMap || 'world';
+    return true;
+  }catch(e){ return false; }
+}
+
+function hasSave(slot=1){
+  return !!localStorage.getItem('braveChronicle_save'+slot);
+}
+
+// ========================
+//  LEVEL UP
+// ========================
+function checkLevelUp(){
+  let leveledUp = false;
+  let messages = [];
+  while(G.hero.level < 99){
+    const nextLv = G.hero.level + 1;
+    const needed = LV_TABLE[nextLv].exp;
+    if(G.hero.exp >= needed){
+      G.hero.level = nextLv;
+      const s = LV_TABLE[nextLv];
+      const oldHp=G.hero.maxHp, oldMp=G.hero.maxMp, oldAtk=G.hero.atk, oldDef=G.hero.def;
+      G.hero.maxHp = s.hp; G.hero.maxMp = s.mp;
+      G.hero.atk = s.atk; G.hero.def = s.def; G.hero.agi = s.agi;
+      G.hero.hp = G.hero.maxHp; G.hero.mp = G.hero.maxMp;
+      let msg = `🎊 レベル ${nextLv} に上がった！\n`;
+      msg += `❤️ HP ${oldHp}→${G.hero.maxHp}  💧 MP ${oldMp}→${G.hero.maxMp}\n`;
+      msg += `⚔️ ATK ${oldAtk}→${G.hero.atk}  🛡️ DEF ${oldDef}→${G.hero.def}`;
+      // Learn spells
+      for(const [k,sp] of Object.entries(SPELLS)){
+        if(sp.learnLv === nextLv && !G.hero.spells.includes(k)){
+          G.hero.spells.push(k);
+          msg += `\n🔮 ${sp.name} を覚えた！`;
+        }
+      }
+      messages.push(msg);
+      leveledUp = true;
+      if(nextLv>=10) unlockAch('lv10');
+      if(nextLv>=25) unlockAch('lv25');
+      if(nextLv>=50) unlockAch('lv50');
+    } else break;
+  }
+  return { leveledUp, messages };
+}
+
+// ========================
+//  MAP RENDERING
+// ========================
+function renderMap(){
+  const map = MAPS[G.currentMap];
+  if(!map) return;
+  const data = map.data;
+  const px = G.hero.x, py = G.hero.y;
+  const viewW = 11, viewH = 9;
+  const halfW = Math.floor(viewW/2), halfH = Math.floor(viewH/2);
+
+  let lines = [];
+  for(let vy=0; vy<viewH; vy++){
+    let row = '';
+    for(let vx=0; vx<viewW; vx++){
+      const mx = px - halfW + vx;
+      const my = py - halfH + vy;
+      if(mx === px && my === py){
+        row += '🧝'; continue;
+      }
+      if(mx<0 || my<0 || my>=data.length){
+        row += '⬛'; continue;
+      }
+      const rowStr = data[my];
+      if(mx >= rowStr.length){
+        row += '⬛'; continue;
+      }
+      const ch = rowStr[mx];
+      row += TILE_DEF[ch] || ch;
+    }
+    lines.push(row);
+  }
+  $('map').textContent = lines.join('\n');
+  $('field-info').textContent = `📍 ${map.name}  👣 ${G.hero.steps}歩`;
+  renderFieldStatus();
+}
+
+function renderFieldStatus(){
+  const h = G.hero;
+  $('field-status').innerHTML = `
+    🧝 ${h.name} Lv.${h.level}　💰 ${h.gold}G<br>
+    ❤️ ${h.hp}/${h.maxHp} <span class="bar-bg"><span class="hp-bar" style="width:${(h.hp/h.maxHp)*100}%"></span></span>
+    💧 ${h.mp}/${h.maxMp} <span class="bar-bg"><span class="mp-bar" style="width:${(h.mp/h.maxMp)*100}%"></span></span>
+  `;
+}
+
+// ========================
+//  FIELD MESSAGE
+// ========================
+let fieldMsgTimeout = null;
+function showFieldMsg(text, duration=2000){
+  return new Promise(resolve=>{
+    $('field-msg').style.display='block';
+    $('field-msg').textContent = text;
+    if(fieldMsgTimeout) clearTimeout(fieldMsgTimeout);
+    fieldMsgTimeout = setTimeout(()=>{
+      $('field-msg').style.display='none';
+      resolve();
+    }, duration);
+  });
+}
+
+async function showFieldMsgWait(text){
+  $('field-msg').style.display='block';
+  $('field-msg').textContent = text + '\n（タップ/Enterで続く）';
+  return new Promise(resolve=>{
+    G.msgCallback = ()=>{
+      $('field-msg').style.display='none';
+      G.msgCallback = null;
+      resolve();
+    };
+  });
+}
+
+// ========================
+//  FIELD MOVEMENT
+// ========================
+function moveHero(dx, dy){
+  if(G.scene !== 'field' || G.menuOpen) return;
+  const map = MAPS[G.currentMap];
+  const nx = G.hero.x + dx;
+  const ny = G.hero.y + dy;
+
+  // Bounds check
+  if(ny<0 || ny>=map.data.length || nx<0 || nx>=map.data[ny].length) return;
+
+  const tile = map.data[ny][nx];
+  if(map.blocked && map.blocked.includes(tile)) return;
+
+  G.hero.x = nx;
+  G.hero.y = ny;
+  G.hero.steps++;
+  G.encounterSteps++;
+
+  renderMap();
+  checkFieldEvents();
+}
+
+async function checkFieldEvents(){
+  const map = MAPS[G.currentMap];
+  const key = `${G.hero.x},${G.hero.y}`;
+
+  // Town entrance
+  if(map.towns && map.towns[key]){
+    const t = map.towns[key];
+    enterTown(t.id);
+    return;
+  }
+
+  // Dungeon entrance
+  if(map.dungeons && map.dungeons[key]){
+    const d = map.dungeons[key];
+    await showFieldMsg(`${d.name} に入った！`);
+    G.currentMap = d.id;
+    G.hero.currentMap = d.id;
+    const dm = MAPS[d.id];
+    if(dm && dm.playerStart){
+      G.hero.x = dm.playerStart.x;
+      G.hero.y = dm.playerStart.y;
+    }
+    renderMap();
+    return;
+  }
+
+  // Exit dungeon
+  if(map.exitTo){
+    const tile = map.data[G.hero.y][G.hero.x];
+    if(tile === '=' || tile === 'd'){
+      await showFieldMsg('外に出た！');
+      G.currentMap = map.exitTo.map;
+      G.hero.currentMap = map.exitTo.map;
+      G.hero.x = map.exitTo.x;
+      G.hero.y = map.exitTo.y;
+      renderMap();
+      return;
+    }
+  }
+
+  // Events
+  if(map.events && map.events[key]){
+    const ev = map.events[key];
+    if(ev.type === 'chest' && !G.storyFlags[ev.flag]){
+      G.storyFlags[ev.flag] = true;
+      if(ev.item){
+        if(WEAPONS[ev.item]) G.hero.weapon = ev.item;
+        else if(ARMORS[ev.item]) G.hero.armor = ev.item;
+        else {
+          G.hero.inventory[ev.item] = (G.hero.inventory[ev.item]||0) + 1;
+        }
+      }
+      await showFieldMsgWait(ev.msg);
+      renderMap();
+      return;
+    }
+    if(ev.type === 'tower'){
+      await showFieldMsgWait(ev.msg);
+      return;
+    }
+  }
+
+  // Boss
+  if(map.boss){
+    const b = map.boss;
+    if(G.hero.x === b.x && G.hero.y === b.y && !G.storyFlags[b.flag]){
+      await showFieldMsgWait(b.msg);
+      startBattle(b.monster, true, b.flag);
+      return;
+    }
+  }
+
+  // Random encounter
+  if(map.encounters && map.encounters.length > 0){
+    const baseRate = 15;
+    if(G.encounterSteps >= rand(5, baseRate)){
+      G.encounterSteps = 0;
+      // Pick monster based on area
+      const area = map.area || 1;
+      const possible = Object.entries(MONSTERS).filter(([k,m])=>
+        !m.isBoss && m.area && m.area.includes(area)
+      );
+      if(possible.length > 0){
+        const [mKey] = possible[rand(0, possible.length-1)];
+        startBattle(mKey, false, null);
+      }
+    }
+  }
+}
+
+// ========================
+//  TOWN SYSTEM
+// ========================
+function enterTown(townId){
+  G.scene = 'town';
+  G.townId = townId;
+  const town = TOWNS[townId];
+  if(!town){ G.scene='field'; return; }
+
+  showScreen('town-screen');
+  $('town-title').textContent = town.name;
+
+  let optionsHtml = '';
+  optionsHtml += `<div class="town-btn dq-window" data-town="talk">👤 はなす</div>`;
+  if(town.inn) optionsHtml += `<div class="town-btn dq-window" data-town="inn">🛏️ やどや（${town.inn.price}G）</div>`;
+  if(town.shop) optionsHtml += `<div class="town-btn dq-window" data-town="shop">🏪 おみせ</div>`;
+  if(town.church) optionsHtml += `<div class="town-btn dq-window" data-town="church">⛪ きょうかい（セーブ）</div>`;
+  optionsHtml += `<div class="town-btn dq-window" data-town="leave">🚪 まちを出る</div>`;
+
+  $('town-options').innerHTML = optionsHtml;
+  $('town-msg').textContent = town.welcome;
+
+  // Event listeners
+  $('town-options').querySelectorAll('.town-btn').forEach(btn=>{
+    btn.onclick = () => handleTownAction(btn.dataset.town);
+  });
+}
+
+let talkIndex = 0;
+function handleTownAction(action){
+  const town = TOWNS[G.townId];
+  if(!town) return;
+
+  switch(action){
+    case 'talk':
+      if(town.npcs && town.npcs.length>0){
+        $('town-msg').textContent = town.npcs[talkIndex % town.npcs.length];
+        talkIndex++;
+      } else {
+        $('town-msg').textContent = '👤「…」';
+      }
+      break;
+
+    case 'inn':
+      if(G.hero.gold >= town.inn.price){
+        G.hero.gold -= town.inn.price;
+        G.hero.hp = G.hero.maxHp;
+        G.hero.mp = G.hero.maxMp;
+        $('town-msg').textContent = `${town.inn.msg}\n❤️ HP・💧 MPが全回復した！`;
+      } else {
+        $('town-msg').textContent = '💰 お金が足りない…';
+      }
+      break;
+
+    case 'shop':
+      openShop(town.shop);
+      break;
+
+    case 'church':
+      saveGame(1);
+      $('town-msg').textContent = '⛪ 冒険の書に記録しました。\n💾 セーブ完了！';
+      break;
+
+    case 'leave':
+      G.scene = 'field';
+      talkIndex = 0;
+      showScreen('field-screen');
+      renderMap();
+      break;
+  }
+}
+
+// ========================
+//  SHOP SYSTEM
+// ========================
+function openShop(shopData){
+  G.scene = 'shop';
+  showScreen('shop-screen');
+  $('shop-title').textContent = shopData.greeting;
+
+  let html = '';
+  if(shopData.items){
+    shopData.items.forEach(key=>{
+      const it = ITEMS[key];
+      if(it) html += `<div class="shop-item" data-buy="item:${key}">
+        <span>🧪 ${it.name}</span><span>${it.price}G  (${it.desc})</span>
+      </div>`;
+    });
+  }
+  if(shopData.equipment){
+    shopData.equipment.forEach(key=>{
+      const w = WEAPONS[key];
+      const a = ARMORS[key];
+      if(w) html += `<div class="shop-item" data-buy="weapon:${key}">
+        <span>🗡️ ${w.name}</span><span>${w.price}G  ATK+${w.atk}</span>
+      </div>`;
+      if(a) html += `<div class="shop-item" data-buy="armor:${key}">
+        <span>🛡️ ${a.name}</span><span>${a.price}G  DEF+${a.def}</span>
+      </div>`;
+    });
+  }
+  $('shop-list').innerHTML = html;
+  $('shop-gold').textContent = `💰 所持金: ${G.hero.gold} G`;
+
+  $('shop-list').querySelectorAll('.shop-item').forEach(el=>{
+    el.onclick = ()=> buyItem(el.dataset.buy);
+  });
+}
+
+function buyItem(buyKey){
+  const [type, key] = buyKey.split(':');
+  let price = 0, name = '';
+  if(type === 'item'){
+    const it = ITEMS[key]; if(!it) return;
+    price = it.price; name = it.name;
+  } else if(type === 'weapon'){
+    const w = WEAPONS[key]; if(!w) return;
+    price = w.price; name = w.name;
+  } else if(type === 'armor'){
+    const a = ARMORS[key]; if(!a) return;
+    price = a.price; name = a.name;
+  }
+
+  if(G.hero.gold >= price){
+    G.hero.gold -= price;
+    if(type==='item'){
+      G.hero.inventory[key] = (G.hero.inventory[key]||0) + 1;
+    } else if(type==='weapon'){
+      G.hero.weapon = key;
+    } else if(type==='armor'){
+      G.hero.armor = key;
+    }
+    $('shop-title').textContent = `🧔「${name} を買ってくれたね！ありがとう！」`;
+  } else {
+    $('shop-title').textContent = '🧔「お金が足りないようだね…」';
+  }
+  $('shop-gold').textContent = `💰 所持金: ${G.hero.gold} G`;
+
+  if(G.hero.gold >= 99999) unlockAch('rich');
+}
+
+// ========================
+//  BATTLE SYSTEM
+// ========================
+let battleCmdIndex = 0;
+const battleCmds = ['attack','spell','item','run'];
+
+function startBattle(monsterKey, isBossEncounter, bossFlag){
+  const mData = MONSTERS[monsterKey];
+  if(!mData) return;
+
+  G.scene = 'battle';
+  G.battleState = {
+    monster: { ...mData, key: monsterKey, currentHp: mData.hp },
+    isBoss: isBossEncounter,
+    bossFlag: bossFlag,
+    turn: 'player',
+    animating: false,
+  };
+
+  // Register to monster book
+  if(!G.monsterBook[monsterKey]){
+    G.monsterBook[monsterKey] = { count:0, seen:true };
+  }
+
+  showScreen('battle-screen');
+  $('battle-submenu').style.display='none';
+  renderBattle();
+  $('battle-log').innerHTML = `${mData.emoji} ${mData.name} が あらわれた！`;
+  battleCmdIndex = 0;
+  updateBattleCmdSelection();
+}
+
+function renderBattle(){
+  const bs = G.battleState;
+  if(!bs) return;
+  const m = bs.monster;
+
+  $('battle-monster-display').textContent = m.emoji;
+  $('battle-monster-name').textContent = m.name;
+  const hpPct = Math.floor((m.currentHp / m.hp)*100);
+  $('battle-monster-hp').textContent = `HP: ${hpBar(m.currentHp, m.hp, 12)} ${hpPct}%`;
+
+  const h = G.hero;
+  $('battle-status').innerHTML = `
+    🧝 ${h.name} Lv.${h.level}<br>
+    ❤️ ${h.hp}/${h.maxHp} ${hpBar(h.hp,h.maxHp)}<br>
+    💧 ${h.mp}/${h.maxMp} ${hpBar(h.mp,h.maxMp)}
+  `;
+}
+
+function updateBattleCmdSelection(){
+  $('battle-commands').querySelectorAll('.cmd').forEach((el,i)=>{
+    el.classList.toggle('selected', i===battleCmdIndex);
+  });
+}
+
+function addBattleLog(text){
+  const log = $('battle-log');
+  log.innerHTML += '<br>' + text;
+  log.scrollTop = log.scrollHeight;
+}
+
+async function executeBattleCommand(cmd){
+  const bs = G.battleState;
+  if(!bs || bs.animating) return;
+  bs.animating = true;
+  $('battle-submenu').style.display='none';
+
+  const h = G.hero;
+  const m = bs.monster;
+
+  // Determine turn order
+  const heroFirst = h.agi >= m.agi || Math.random() < 0.5;
+
+  if(cmd === 'run'){
+    if(bs.isBoss){
+      addBattleLog('💨 ボスからは逃げられない！');
+    } else {
+      const runChance = 0.5 + (h.agi - m.agi) * 0.02;
+      if(Math.random() < runChance){
+        addBattleLog('💨 うまく逃げ切れた！');
+        await sleep(800);
+        endBattle(false);
+        return;
+      } else {
+        addBattleLog('💨 しかし回り込まれた！');
+      }
+    }
+    // Enemy turn
+    await sleep(500);
+    await enemyTurn();
+    bs.animating = false;
+    renderBattle();
+    return;
+  }
+
+  if(heroFirst){
+    await playerAction(cmd);
+    if(m.currentHp <= 0){ await victorySequence(); return; }
+    await sleep(400);
+    await enemyTurn();
+    if(h.hp <= 0){ await defeatSequence(); return; }
+  } else {
+    await enemyTurn();
+    if(h.hp <= 0){ await defeatSequence(); return; }
+    await sleep(400);
+    await playerAction(cmd);
+    if(m.currentHp <= 0){ await victorySequence(); return; }
+  }
+
+  bs.animating = false;
+  renderBattle();
+}
+
+async function playerAction(cmd){
+  const h = G.hero;
+  const m = G.battleState.monster;
+
+  if(cmd === 'attack'){
+    const dmg = calcDamage(totalAtk(), m.def);
+    m.currentHp = Math.max(0, m.currentHp - dmg);
+    const critical = Math.random() < 0.05;
+    if(critical){
+      const critDmg = dmg * 2;
+      m.currentHp = Math.max(0, m.currentHp + dmg - critDmg);
+      addBattleLog(`⚔️ ${h.name} の攻撃！\n✨ 会心の一撃！ ${m.name}に ${critDmg} のダメージ！`);
+      $('battle-area').classList.add('flash');
+      setTimeout(()=>$('battle-area').classList.remove('flash'),400);
+    } else {
+      addBattleLog(`⚔️ ${h.name} の攻撃！\n💥 ${m.name}に ${dmg} のダメージ！`);
+    }
+    $('battle-area').classList.add('shake');
+    setTimeout(()=>$('battle-area').classList.remove('shake'),300);
+    renderBattle();
+  }
+  else if(cmd.startsWith('spell:')){
+    const spKey = cmd.split(':')[1];
+    const sp = SPELLS[spKey];
+    if(!sp) return;
+    if(h.mp < sp.mp){
+      addBattleLog(`💧 MPが足りない！`);
+      return;
+    }
+    h.mp -= sp.mp;
+    if(sp.type === 'attack'){
+      const dmg = sp.power + Math.floor(h.atk * 0.5) + rand(-5,5);
+      m.currentHp = Math.max(0, m.currentHp - Math.max(1,dmg));
+      addBattleLog(`🔮 ${h.name} は ${sp.name} をとなえた！\n✨ ${m.name}に ${Math.max(1,dmg)} のダメージ！`);
+      $('battle-area').classList.add('shake');
+      setTimeout(()=>$('battle-area').classList.remove('shake'),300);
+    } else if(sp.type === 'heal'){
+      const heal = Math.min(sp.power, h.maxHp - h.hp);
+      h.hp = Math.min(h.maxHp, h.hp + sp.power);
+      addBattleLog(`🔮 ${h.name} は ${sp.name} をとなえた！\n💚 HPが ${heal} 回復した！`);
+    } else if(sp.type === 'status'){
+      const success = Math.random() < 0.5;
+      if(success){
+        addBattleLog(`🔮 ${h.name} は ${sp.name} をとなえた！\n😴 ${m.name}は眠ってしまった！`);
+        // Skip enemy next turn (simplified)
+        G.battleState.enemySleep = true;
+      } else {
+        addBattleLog(`🔮 ${h.name} は ${sp.name} をとなえた！\nしかし ${m.name}には効かなかった！`);
+      }
+    }
+    renderBattle();
+  }
+  else if(cmd.startsWith('item:')){
+    const itKey = cmd.split(':')[1];
+    const it = ITEMS[itKey];
+    if(!it) return;
+    if(!G.hero.inventory[itKey] || G.hero.inventory[itKey] <= 0){
+      addBattleLog('🎒 そのアイテムは持っていない！');
+      return;
+    }
+    G.hero.inventory[itKey]--;
+    if(G.hero.inventory[itKey] <= 0) delete G.hero.inventory[itKey];
+
+    if(it.type === 'heal'){
+      const heal = Math.min(it.power, h.maxHp - h.hp);
+      h.hp = Math.min(h.maxHp, h.hp + it.power);
+      addBattleLog(`🧪 ${it.name} を使った！\n💚 HPが ${heal} 回復した！`);
+    } else if(it.type === 'mp_heal'){
+      const heal = Math.min(it.power, h.maxMp - h.mp);
+      h.mp = Math.min(h.maxMp, h.mp + it.power);
+      addBattleLog(`🧪 ${it.name} を使った！\n💧 MPが ${heal} 回復した！`);
+    } else if(it.type === 'full'){
+      h.hp = h.maxHp; h.mp = h.maxMp;
+      addBattleLog(`🧪 ${it.name} を使った！\n✨ HP・MPが全回復した！`);
+    }
+    renderBattle();
+  }
+}
+
+async function enemyTurn(){
+  const h = G.hero;
+  const m = G.battleState.monster;
+
+  if(G.battleState.enemySleep){
+    addBattleLog(`${m.emoji} ${m.name}は眠っている…`);
+    if(Math.random() < 0.5) G.battleState.enemySleep = false;
+    return;
+  }
+
+  const dmg = calcDamage(m.atk, totalDef());
+  h.hp = Math.max(0, h.hp - dmg);
+  addBattleLog(`${m.emoji} ${m.name} の攻撃！\n💔 ${h.name}は ${dmg} のダメージを受けた！`);
+  renderBattle();
+}
+
+async function victorySequence(){
+  const bs = G.battleState;
+  const m = bs.monster;
+  const h = G.hero;
+
+  await sleep(500);
+  addBattleLog(`\n☠️ ${m.name} を たおした！`);
+
+  // Monster book
+  if(G.monsterBook[m.key]) G.monsterBook[m.key].count++;
+  const bookCount = Object.keys(G.monsterBook).length;
+  if(bookCount >= 10) unlockAch('book10');
+
+  await sleep(500);
+  h.exp += m.exp;
+  h.gold += m.gold;
+  addBattleLog(`📈 ${m.exp} の経験値を獲得！`);
+  addBattleLog(`💰 ${m.gold} ゴールドを手に入れた！`);
+
+  // Drop
+  if(m.drop && Math.random() < m.dropRate){
+    const it = ITEMS[m.drop];
+    if(it){
+      h.inventory[m.drop] = (h.inventory[m.drop]||0) + 1;
+      addBattleLog(`📦 ${it.name} をドロップした！`);
+    }
+  }
+
+  // Level up check
+  const lu = checkLevelUp();
+  if(lu.leveledUp){
+    for(const msg of lu.messages){
+      await sleep(600);
+      addBattleLog('\n' + msg);
+    }
+  }
+
+  // Boss flag
+  if(bs.bossFlag){
+    G.storyFlags[bs.bossFlag] = true;
+    await sleep(500);
+    addBattleLog('\n🌟 光の欠片を手に入れた！');
+    unlockAch(bs.bossFlag.replace('_defeated',''));
+  }
+
+  // First battle achievement
+  unlockAch('first_battle');
+
+  await sleep(600);
+  addBattleLog('\n（タップ/Enterで続く）');
+
+  G.battleState.waitingForEnd = true;
+  G.battleState.animating = false;
+}
+
+async function defeatSequence(){
+  const h = G.hero;
+  await sleep(500);
+  addBattleLog(`\n😵 ${h.name} は力尽きた…`);
+  await sleep(1000);
+  // Revive at half
+  h.hp = Math.floor(h.maxHp / 2);
+  h.mp = Math.floor(h.maxMp / 2);
+  h.gold = Math.floor(h.gold / 2);
+  addBattleLog(`\n⛪ 教会の力で蘇った。\nゴールドが半分になった…`);
+  addBattleLog('\n（タップ/Enterで続く）');
+  G.battleState.waitingForEnd = true;
+  G.battleState.animating = false;
+}
+
+function endBattle(returnToField=true){
+  G.scene = 'field';
+  G.battleState = null;
+  showScreen('field-screen');
+  renderMap();
+}
+
+// ========================
+//  BATTLE UI HANDLERS
+// ========================
+function setupBattleUI(){
+  $('battle-commands').querySelectorAll('.cmd').forEach((el,i)=>{
+    el.onclick = ()=>{
+      if(G.battleState && G.battleState.waitingForEnd){
+        endBattle(); return;
+      }
+      const cmd = el.dataset.cmd;
+      if(cmd === 'spell') showBattleSpellMenu();
+      else if(cmd === 'item') showBattleItemMenu();
+      else executeBattleCommand(cmd);
+    };
+  });
+}
+
+function showBattleSpellMenu(){
+  const sub = $('battle-submenu');
+  let html = '';
+  if(G.hero.spells.length === 0){
+    html = '<div class="sub-item">じゅもんを覚えていない</div>';
+  } else {
+    G.hero.spells.forEach(k=>{
+      const sp = SPELLS[k];
+      html += `<div class="sub-item" data-spell="${k}">🔮 ${sp.name}（MP${sp.mp}）- ${sp.desc}</div>`;
+    });
+  }
+  html += `<div class="sub-item" data-spell="cancel">↩️ もどる</div>`;
+  sub.innerHTML = html;
+  sub.style.display = 'block';
+  sub.querySelectorAll('.sub-item').forEach(el=>{
+    el.onclick = ()=>{
+      sub.style.display='none';
+      if(el.dataset.spell && el.dataset.spell !== 'cancel'){
+        executeBattleCommand('spell:' + el.dataset.spell);
+      }
+    };
+  });
+}
+
+function showBattleItemMenu(){
+  const sub = $('battle-submenu');
+  let html = '';
+  const inv = G.hero.inventory;
+  const keys = Object.keys(inv).filter(k=>inv[k]>0);
+  if(keys.length === 0){
+    html = '<div class="sub-item">どうぐを持っていない</div>';
+  } else {
+    keys.forEach(k=>{
+      const it = ITEMS[k];
+      if(it) html += `<div class="sub-item" data-item="${k}">🧪 ${it.name} ×${inv[k]} - ${it.desc}</div>`;
+    });
+  }
+  html += `<div class="sub-item" data-item="cancel">↩️ もどる</div>`;
+  sub.innerHTML = html;
+  sub.style.display = 'block';
+  sub.querySelectorAll('.sub-item').forEach(el=>{
+    el.onclick = ()=>{
+      sub.style.display='none';
+      if(el.dataset.item && el.dataset.item !== 'cancel'){
+        executeBattleCommand('item:' + el.dataset.item);
+      }
+    };
+  });
+}
+
+// ========================
+//  MENU SYSTEM
+// ========================
+function toggleMenu(){
+  if(G.scene !== 'field') return;
+  G.menuOpen = !G.menuOpen;
+  $('menu-screen').style.display = G.menuOpen ? 'flex' : 'none';
+  $('menu-detail').style.display = 'none';
+}
+
+function setupMenu(){
+  $('menu-screen').querySelectorAll('.menu-btn').forEach(btn=>{
+    btn.onclick = () => handleMenuAction(btn.dataset.menu);
+  });
+}
+
+function handleMenuAction(action){
+  const detail = $('menu-detail');
+  detail.style.display = 'block';
+
+  switch(action){
+    case 'status': {
+      const h = G.hero;
+      const w = WEAPONS[h.weapon]; const a = ARMORS[h.armor];
+      const nextExp = LV_TABLE[h.level+1] ? LV_TABLE[h.level+1].exp - h.exp : 0;
+      detail.innerHTML = `
+        <b>🧝 ${h.name}</b>　Lv.${h.level}<br>
+        ❤️ HP: ${h.hp} / ${h.maxHp}<br>
+        💧 MP: ${h.mp} / ${h.maxMp}<br>
+        ⚔️ こうげき: ${h.atk} (+${getEquipAtk()}) = ${totalAtk()}<br>
+        🛡️ しゅび: ${h.def} (+${getEquipDef()}) = ${totalDef()}<br>
+        💨 すばやさ: ${h.agi}<br>
+        📈 EXP: ${h.exp}　次のLvまで: ${nextExp}<br>
+        💰 ゴールド: ${h.gold} G<br>
+        🗡️ ぶき: ${w?w.name:'なし'}<br>
+        🛡️ よろい: ${a?a.name:'なし'}
+      `;
+      break;
+    }
+    case 'equipment': {
+      const h = G.hero;
+      const w = WEAPONS[h.weapon]; const a = ARMORS[h.armor];
+      detail.innerHTML = `
+        <b>⚔️ そうび</b><br><br>
+        🗡️ ぶき: ${w?w.name:'なし'} (ATK+${w?w.atk:0})<br>
+        🛡️ よろい: ${a?a.name:'なし'} (DEF+${a?a.def:0})<br>
+        <br><small>※装備はショップで購入すると自動装備されます</small>
+      `;
+      break;
+    }
+    case 'items': {
+      let html = '<b>🎒 どうぐ</b><br><br>';
+      const inv = G.hero.inventory;
+      const keys = Object.keys(inv).filter(k=>inv[k]>0);
+      if(keys.length===0){ html += 'どうぐを持っていない'; }
+      else {
+        keys.forEach(k=>{
+          const it = ITEMS[k];
+          if(it){
+            html += `<div style="padding:4px 0;cursor:pointer;" class="field-use-item" data-item="${k}">
+              🧪 ${it.name} ×${inv[k]} - ${it.desc}
+            </div>`;
+          }
+        });
+      }
+      detail.innerHTML = html;
+      // Use items on field
+      detail.querySelectorAll('.field-use-item').forEach(el=>{
+        el.onclick = ()=>{
+          const k = el.dataset.item;
+          const it = ITEMS[k];
+          if(!it || !G.hero.inventory[k]) return;
+          if(it.type==='heal'){
+            G.hero.inventory[k]--;
+            if(G.hero.inventory[k]<=0) delete G.hero.inventory[k];
+            const heal = Math.min(it.power, G.hero.maxHp - G.hero.hp);
+            G.hero.hp = Math.min(G.hero.maxHp, G.hero.hp + it.power);
+            handleMenuAction('items');
+            showFieldMsg(`💚 ${it.name}を使った！HPが${heal}回復！`);
+            renderFieldStatus();
+          } else if(it.type==='mp_heal'){
+            G.hero.inventory[k]--;
+            if(G.hero.inventory[k]<=0) delete G.hero.inventory[k];
+            const heal = Math.min(it.power, G.hero.maxMp - G.hero.mp);
+            G.hero.mp = Math.min(G.hero.maxMp, G.hero.mp + it.power);
+            handleMenuAction('items');
+            showFieldMsg(`💧 ${it.name}を使った！MPが${heal}回復！`);
+            renderFieldStatus();
+          } else if(it.type==='escape'){
+            G.hero.inventory[k]--;
+            if(G.hero.inventory[k]<=0) delete G.hero.inventory[k];
+            // Teleport to world map start
+            G.currentMap = 'world';
+            G.hero.currentMap = 'world';
+            G.hero.x = 8; G.hero.y = 6;
+            toggleMenu();
+            renderMap();
+            showFieldMsg('🪶 キメラのつばさを使った！');
+          }
+        };
+      });
+      break;
+    }
+    case 'monster-book': {
+      let html = `<b>📖 モンスター図鑑</b>　${Object.keys(G.monsterBook).length}種 発見<br><br>`;
+      let no = 1;
+      for(const [k,m] of Object.entries(MONSTERS)){
+        if(m.isBoss) continue;
+        if(G.monsterBook[k]){
+          html += `${String(no).padStart(3,'0')} ${m.emoji} ${m.name}　討伐:${G.monsterBook[k].count||0}<br>`;
+        } else {
+          html += `${String(no).padStart(3,'0')} ❓ ？？？？？<br>`;
+        }
+        no++;
+      }
+      detail.innerHTML = html;
+      break;
+    }
+    case 'achievements': {
+      let html = '<b>🏆 じっせき</b><br><br>';
+      for(const [k,a] of Object.entries(ACH_DEF)){
+        const unlocked = G.achievements.includes(k);
+        html += `${unlocked?'🏆':'🔒'} ${a.name} - ${a.desc}<br>`;
+      }
+      detail.innerHTML = html;
+      break;
+    }
+    case 'save':
+      saveGame(1);
+      detail.innerHTML = '💾 セーブしました！';
+      break;
+    case 'close':
+      toggleMenu();
+      break;
+  }
+}
+
+// ========================
+//  INPUT HANDLING
+// ========================
+function setupInput(){
+  // Keyboard
+  document.addEventListener('keydown', e=>{
+    if(G.msgCallback){ G.msgCallback(); return; }
+
+    switch(G.scene){
+      case 'title':
+        if(e.key==='Enter') handleTitleAction('newgame');
+        break;
+      case 'name':
+        if(e.key==='Enter') confirmName();
+        break;
+      case 'field':
+        if(G.menuOpen){
+          if(e.key==='Escape'||e.key==='m') toggleMenu();
+          return;
+        }
+        switch(e.key){
+          case 'ArrowUp':case'w':    moveHero(0,-1);break;
+          case 'ArrowDown':case's':  moveHero(0,1);break;
+          case 'ArrowLeft':case'a':  moveHero(-1,0);break;
+          case 'ArrowRight':case'd': moveHero(1,0);break;
+          case 'm':case'Escape':     toggleMenu();break;
+        }
+        break;
+      case 'battle':
+        if(G.battleState && G.battleState.waitingForEnd){
+          if(e.key==='Enter'||e.key===' ') endBattle();
+          return;
+        }
+        if(G.battleState && !G.battleState.animating){
+          switch(e.key){
+            case 'ArrowUp':case 'ArrowLeft':
+              battleCmdIndex = (battleCmdIndex+3)%4;
+              updateBattleCmdSelection();
+              break;
+            case 'ArrowDown':case 'ArrowRight':
+              battleCmdIndex = (battleCmdIndex+1)%4;
+              updateBattleCmdSelection();
+              break;
+            case 'Enter':case ' ':
+              const cmd = battleCmds[battleCmdIndex];
+              if(cmd==='spell') showBattleSpellMenu();
+              else if(cmd==='item') showBattleItemMenu();
+              else executeBattleCommand(cmd);
+              break;
+          }
+        }
+        break;
+      case 'shop':
+        if(e.key==='Escape') shopBack();
+        break;
+    }
+  });
+
+  // Mobile D-pad
+  document.querySelectorAll('#dpad .d-btn').forEach(btn=>{
+    const handler = ()=>{
+      if(G.msgCallback){ G.msgCallback(); return; }
+      const dir = btn.dataset.dir;
+      if(G.scene==='field' && !G.menuOpen){
+        switch(dir){
+          case'up':moveHero(0,-1);break;
+          case'down':moveHero(0,1);break;
+          case'left':moveHero(-1,0);break;
+          case'right':moveHero(1,0);break;
+          case'action':
+            // Check if any interaction possible
+            break;
+        }
+      } else if(G.scene==='battle'){
+        if(G.battleState && G.battleState.waitingForEnd){
+          endBattle(); return;
+        }
+        if(dir==='up'||dir==='left'){ battleCmdIndex=(battleCmdIndex+3)%4; updateBattleCmdSelection(); }
+        if(dir==='down'||dir==='right'){ battleCmdIndex=(battleCmdIndex+1)%4; updateBattleCmdSelection(); }
+        if(dir==='action'){
+          const cmd = battleCmds[battleCmdIndex];
+          if(cmd==='spell') showBattleSpellMenu();
+          else if(cmd==='item') showBattleItemMenu();
+          else executeBattleCommand(cmd);
+        }
+      }
+    };
+    btn.addEventListener('touchstart', e=>{ e.preventDefault(); handler(); });
+    btn.addEventListener('click', handler);
+  });
+
+  // Mobile action buttons
+  document.querySelectorAll('#action-buttons .a-btn').forEach(btn=>{
+    const handler = ()=>{
+      if(G.msgCallback){ G.msgCallback(); return; }
+      const act = btn.dataset.act;
+      if(act==='menu' && G.scene==='field') toggleMenu();
+      if(act==='action'){
+        if(G.scene==='battle'){
+          if(G.battleState && G.battleState.waitingForEnd){ endBattle(); return; }
+          if(G.battleState && !G.battleState.animating){
+            const cmd = battleCmds[battleCmdIndex];
+            if(cmd==='spell') showBattleSpellMenu();
+            else if(cmd==='item') showBattleItemMenu();
+            else executeBattleCommand(cmd);
+          }
+        }
+      }
+    };
+    btn.addEventListener('touchstart', e=>{ e.preventDefault(); handler(); });
+    btn.addEventListener('click', handler);
+  });
+
+  // Title buttons
+  document.querySelectorAll('#title-screen .menu-item').forEach(btn=>{
+    btn.onclick = ()=> handleTitleAction(btn.dataset.action);
+  });
+
+  // Name confirm
+  $('name-confirm').onclick = ()=> confirmName();
+
+  // Shop back
+  $('shop-back').onclick = ()=> shopBack();
+}
+
+function shopBack(){
+  if(G.townId){
+    G.scene = 'town';
+    showScreen('town-screen');
+  } else {
+    G.scene = 'field';
+    showScreen('field-screen');
+  }
+}
+
+// ========================
+//  TITLE / NAME
+// ========================
+function handleTitleAction(action){
+  if(action === 'newgame'){
+    G.scene = 'name';
+    showScreen('name-screen');
+    $('hero-name-input').focus();
+  } else if(action === 'continue'){
+    if(loadGame(1)){
+      G.scene = 'field';
+      G.currentMap = G.hero.currentMap || 'world';
+      showScreen('field-screen');
+      renderMap();
+      showFieldMsg('💾 冒険の続きを読み込みました');
+    } else {
+      alert('セーブデータがありません');
+    }
+  }
+}
+
+function confirmName(){
+  const name = $('hero-name-input').value.trim() || 'アレス';
+  G.hero = createHero(name);
+  G.currentMap = 'world';
+  G.storyFlags = {};
+  G.monsterBook = {};
+  G.achievements = [];
+  G.playTime = 0;
+
+  G.scene = 'field';
+  showScreen('field-screen');
+  renderMap();
+
+  showFieldMsgWait(
+    `👑「${name}よ、世界に光を取り戻すのじゃ！\n\n5つの光の欠片を集めてくれ！\n\nまずは北の洞窟を目指せ！」`
+  );
+}
+
+// ========================
+//  PLAY TIMER
+// ========================
+function startPlayTimer(){
+  G.playTimer = setInterval(()=>{
+    if(G.scene !== 'title' && G.scene !== 'name'){
+      G.playTime++;
+    }
+  }, 1000);
+}
+
+// ========================
+//  INIT
+// ========================
+function init(){
+  setupInput();
+  setupBattleUI();
+  setupMenu();
+  startPlayTimer();
+  showScreen('title-screen');
+
+  // Auto-show continue option styling
+  if(!hasSave(1)){
+    const cont = document.querySelector('[data-action="continue"]');
+    if(cont) cont.style.opacity='0.4';
+  }
+}
+
+// Start!
+init();
+</script>
+
+</body>
+</html>
